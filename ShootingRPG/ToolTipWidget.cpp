@@ -1,15 +1,12 @@
 #include "ToolTipWidget.h"
 #include "Components/TextBlock.h"
 
-void UToolTipWidget::SetTooltipData(const FItemData& ItemData)
+
+void UToolTipWidget::SetTooltipName(FName ItemName)
 {
     if (ItemNameText)
     {
-        ItemNameText->SetText(FText::FromName(ItemData.ItemName));
+        ItemNameText->SetText(FText::FromName(ItemName));
     }
 }
 
-void UToolTipWidget::NativeConstruct()
-{
-    Super::NativeConstruct();
-}

@@ -19,19 +19,39 @@ public:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
     /** Set Stats **/
-    UPROPERTY(EditAnywhere, Category = "Stat | ST") float MaxHealth = 100.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | ST") float Health = 100.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | ST") float AttackPower = 30.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | ST") float CriticalDmgPercent = 150.0f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stat | ST") float MaxHealth;
+    UPROPERTY(EditAnywhere, Category = "Stat | ST") float DefaultMaxHealth = 100.0f;
 
-    UPROPERTY(EditAnywhere, Category = "Stat | ED") float MaxStamina = 100.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | ED") float Stamina = 100.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | ED") float HealthRegen = 1.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | ED") float StaminaRegen = 1.0f;
+    UPROPERTY(VisibleAnywhere, Category = "Stat | ST") float Health;
+    UPROPERTY(EditAnywhere, Category = "Stat | ST") float DefaultHealth = 100.0f;
 
-    UPROPERTY(EditAnywhere, Category = "Stat | AG") float DefensePower = 10.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | AG") float MoveSpeed = 300.0f;
-    UPROPERTY(EditAnywhere, Category = "Stat | AG") float CriticalChance = 0.0f;
+    UPROPERTY(VisibleAnywhere, Category = "Stat | ST") float AttackPower;
+    UPROPERTY(EditAnywhere, Category = "Stat | ST") float DefaultAttackPower = 30.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | ST") float CriticalDmgPercent;
+    UPROPERTY(EditAnywhere, Category = "Stat | ST") float DefaultCriticalDmgPercent = 150.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | ED") float MaxStamina;
+    UPROPERTY(EditAnywhere, Category = "Stat | ED") float DefaultMaxStamina = 100.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | ED") float Stamina;
+    UPROPERTY(EditAnywhere, Category = "Stat | ED") float DefaultStamina = 100.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | ED") float HealthRegen;
+    UPROPERTY(EditAnywhere, Category = "Stat | ED") float DefaultHealthRegen = 1.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | ED") float StaminaRegen;
+    UPROPERTY(EditAnywhere, Category = "Stat | ED") float DefaultStaminaRegen = 1.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | AG") float DefensePower;
+    UPROPERTY(EditAnywhere, Category = "Stat | AG") float DefaultDefensePower = 10.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | AG") float MoveSpeed;
+    UPROPERTY(EditAnywhere, Category = "Stat | AG") float DefaultMoveSpeed = 300.0f;
+
+    UPROPERTY(VisibleAnywhere, Category = "Stat | AG") float CriticalChance;
+    UPROPERTY(EditAnywhere, Category = "Stat | AG") float DefaultCriticalChance = 0.0f;
+
 
     UPROPERTY(EditAnywhere, Category = "Stat | EXP") int32 Level = 1;
     UPROPERTY(EditAnywhere, Category = "Stat | EXP") float Exp = 0.0f;

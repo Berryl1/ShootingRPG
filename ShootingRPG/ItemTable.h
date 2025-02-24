@@ -38,6 +38,9 @@ struct FItemData : public FTableRowBase
     float Weight = 1.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+    int32 Quantity = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
     UTexture2D* ItemIcon;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")

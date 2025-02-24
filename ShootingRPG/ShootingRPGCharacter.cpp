@@ -70,19 +70,16 @@ void AShootingRPGCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Inventory UI 생성 (이미 잘 구현됨)
 	if (InventoryUIClass)
 	{
 		InventoryUIInstance = CreateWidget<UInventoryUI>(GetWorld(), InventoryUIClass);
 		if (InventoryUIInstance)
 		{
 			InventoryUIInstance->AddToViewport();
-			InventoryUIInstance->InitializeGrid();
 			InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 
-	// Stat Widget 생성 – 생성자를 대신하여 BeginPlay()에서 생성
 	if (StatWidgetClass)
 	{
 		StatWidgetInstance = CreateWidget<UStatWidget>(GetWorld(), StatWidgetClass);
@@ -94,18 +91,7 @@ void AShootingRPGCharacter::BeginPlay()
 	}
 }
 
-void AShootingRPGCharacter::AddItemToInventory(FItemData NewItem)
-{
-	if (InventoryUIInstance)
-	{
-		Inventory.Add(NewItem);
-		OnInventoryUpdated.Broadcast();
 
-		int32 Row = Inventory.Num() / 4; // 행 계산
-		int32 Column = Inventory.Num() % 5; // 열 계산
-		InventoryUIInstance->AddItemToGrid(NewItem.ItemIcon, Row, Column); // ItemIcon을 그리드에 추가
-	}
-}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -152,31 +138,6 @@ void AShootingRPGCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 	
 }
 
-void AShootingRPGCharacter::DebugFunction()
-{
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-	if (!PlayerController || !StatWidgetInstance) return;
-
-	if (StatWidgetInstance->IsVisible())
-	{
-		// 위젯 숨김 + 마우스 커서 숨김
-		StatWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
-		PlayerController->bShowMouseCursor = false;
-		PlayerController->SetInputMode(FInputModeGameOnly());  // 게임 모드로 변경
-	}
-	else
-	{
-		if (InventoryUIInstance && InventoryUIInstance->IsVisible())
-		{
-			InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
-		}
-
-		// 위젯 표시 + 마우스 커서 보이게 설정
-		StatWidgetInstance->SetVisibility(ESlateVisibility::Visible);
-		PlayerController->bShowMouseCursor = true;
-		PlayerController->SetInputMode(FInputModeUIOnly());  // UI 모드로 변경
-	}
-}
 
 
 
@@ -242,12 +203,88 @@ void AShootingRPGCharacter::PickUpItem()
 	}
 }
 
+void AShootingRPGCharacter::SortInventory()
+{
+	// Sort Inventory by Item Type
+	Inventory.Sort([](const FItemData& A, const FItemData& B)
+	{
+		if (A.ItemType == B.ItemType)
+		{
+				return A.ItemName.Compare(B.ItemName) < 0;
+		}
+		
+		return A.ItemType < B.ItemType;
+
+		});
+
+	if(InventoryUIInstance)
+	{
+		InventoryUIInstance->RefreshInventory(Inventory);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Inventory Sorted :"));
+	for(const FItemData& Item : Inventory)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Item Name: %s, ItemType: %d"), *Item.ItemName.ToString(), (int32)Item.ItemType);
+	}
+
+}
+
+void AShootingRPGCharacter::AddItemToInventory(FItemData NewItem)
+{
+	if (InventoryUIInstance)
+	{
+		FName ItemName = NewItem.ItemName;
+		int32 Index = -1;
+
+		if (NewItem.ItemType == EItemType::Consumable || NewItem.ItemType == EItemType::QuestItem)
+		{
+			for (int32 i = 0; i < Inventory.Num(); i++)
+			{
+				if (Inventory[i].ItemName == ItemName)
+				{
+					Index = i;
+					break;
+				}
+			}
+
+			if (Index == -1)
+			{
+				Index = Inventory.Num();
+				Inventory.Add(NewItem);  // Add New Item
+				ItemQuantities.Add(ItemName, 1);  // Set Item Count
+				InventoryUIInstance->SetItemToGrid(NewItem.ItemIcon, Index); // Update UI
+			}
+			else
+			{
+				ItemQuantities[ItemName]++;
+				InventoryUIInstance->UpdateItemCount(Index, ItemQuantities[ItemName]); // set count
+			}
+		}
+		// if New Item, Add Invntory
+		else
+		{
+			InventoryUIInstance->SetItemToGrid(NewItem.ItemIcon, Inventory.Num());
+			Inventory.Add(NewItem);
+		}
+
+		// Update Inventory UI Weight
+		InventoryUIInstance->UpdateInventoryDisplay(NewItem.Weight);
+	}
+}
+
+
+
 void AShootingRPGCharacter::ToggleInventory()
 {
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	if (!PlayerController || !StatWidgetInstance) return;
 
 	if (InventoryUIInstance->IsVisible())
 	{
 		InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
+		PlayerController->bShowMouseCursor = false;
+		PlayerController->SetInputMode(FInputModeGameOnly());
 	}
 	
 	else
@@ -257,9 +294,34 @@ void AShootingRPGCharacter::ToggleInventory()
 			StatWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 		}
 		InventoryUIInstance->SetVisibility(ESlateVisibility::Visible);
+		PlayerController->bShowMouseCursor = true;
 	}
 }
 
+void AShootingRPGCharacter::DebugFunction()
+{
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	if (!PlayerController || !StatWidgetInstance) return;
+
+	if (StatWidgetInstance->IsVisible())
+	{
+		// 위젯 숨김 + 마우스 커서 숨김
+		StatWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+		PlayerController->bShowMouseCursor = false;
+		PlayerController->SetInputMode(FInputModeGameOnly());  // 게임 모드로 변경
+	}
+	else
+	{
+		if (InventoryUIInstance && InventoryUIInstance->IsVisible())
+		{
+			InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
+		}
+
+		// 위젯 표시 + 마우스 커서 보이게 설정
+		StatWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+		PlayerController->bShowMouseCursor = true;
+	}
+}
 
 void AShootingRPGCharacter::SetOverlappingItem(AItemActor* NewItem)
 {

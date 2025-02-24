@@ -89,16 +89,19 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TArray<FItemData> Inventory;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	TMap<FName, int32> ItemQuantities;
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void AddItemToInventory(FItemData NewItem);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	const TArray<FItemData>& GetInventory() const { return Inventory; }
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryAdded);
+	//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryAdded);
 
-	UPROPERTY(BlueprintAssignable, Category = "Inventory")
-	FOnInventoryAdded OnInventoryUpdated;
+	//UPROPERTY(BlueprintAssignable, Category = "Inventory")
+	//FOnInventoryAdded OnInventoryUpdated;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UStatWidget> StatWidgetClass;
@@ -121,6 +124,8 @@ public:
 	void SetOverlappingItem(AItemActor* NewItem);
 
 	void PickUpItem();
+
+	void SortInventory();
 
 
 

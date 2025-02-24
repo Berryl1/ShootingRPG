@@ -4,6 +4,20 @@
 UStatComponent::UStatComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
+
+    MaxHealth = DefaultMaxHealth;
+    Health = DefaultHealth;
+    AttackPower = DefaultAttackPower;
+    CriticalDmgPercent = DefaultCriticalDmgPercent;
+
+    MaxStamina = DefaultMaxStamina;
+    Stamina = DefaultStamina;
+    HealthRegen = DefaultHealthRegen;
+    StaminaRegen = DefaultStaminaRegen;
+
+    DefensePower = DefaultDefensePower;
+    MoveSpeed = DefaultMoveSpeed;
+    CriticalChance = DefaultCriticalChance;
 }
 
 void UStatComponent::BeginPlay()
@@ -67,23 +81,23 @@ void UStatComponent::AddStatPoints(int32 PointsToAdd)
 
 void UStatComponent::SetStrength()
 {
-    MaxHealth = 100.0f + Strength * 10.0f;
-    AttackPower = 30.0f + Strength * 2.0f;
-    CriticalDmgPercent = 150.0f + Strength * 1.0f;
+    MaxHealth = DefaultMaxHealth + Strength * 10.0f;
+    AttackPower = DefaultAttackPower + Strength * 2.0f;
+    CriticalDmgPercent = DefaultCriticalDmgPercent + Strength * 1.0f;
 }
 
 void UStatComponent::SetEndurance()
 {
-    MaxStamina = 100.0f + Endurance * 5.0f;
-    HealthRegen = 1.0f + Endurance * 0.1f;
-    StaminaRegen = 1.0f + Endurance * 0.1f;
+    MaxStamina = DefaultMaxStamina + Endurance * 5.0f;
+    HealthRegen = DefaultHealthRegen + Endurance * 0.1f;
+    StaminaRegen = DefaultStaminaRegen + Endurance * 0.1f;
 }
 
 void UStatComponent::SetAgility()
 {
-    DefensePower = 10.0f + Agility * 1.0f;
-    MoveSpeed = 300.0f + Agility * 3.0f;
-    CriticalChance = 4.0f + Agility * 1.5f;
+    DefensePower = DefaultDefensePower + Agility * 1.0f;
+    MoveSpeed = DefaultMoveSpeed + Agility * 3.0f;
+    CriticalChance = DefaultCriticalChance + Agility * 1.5f;
 }
 
 void UStatComponent::SetAllStats()
