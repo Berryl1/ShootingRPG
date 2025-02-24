@@ -94,14 +94,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void AddItemToInventory(FItemData NewItem);
+	
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RemoveItemFromInventory(FName ItemName, int32 Quantity);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	const TArray<FItemData>& GetInventory() const { return Inventory; }
-
-	//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryAdded);
-
-	//UPROPERTY(BlueprintAssignable, Category = "Inventory")
-	//FOnInventoryAdded OnInventoryUpdated;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UStatWidget> StatWidgetClass;

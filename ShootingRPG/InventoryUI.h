@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "ToolTipWidget.h"
+#include "RemoveItemCountWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "InventoryUI.generated.h"
 
@@ -14,6 +15,9 @@ UCLASS()
 class SHOOTINGRPG_API UInventoryUI : public UUserWidget
 {
     GENERATED_BODY()
+
+private:
+    UButton* CurrentlySelectedButton = nullptr;
 
 public:
     
@@ -71,6 +75,8 @@ public:
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget)) UTextBlock* Inventory_Weight;
 
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget)) UToolTipWidget* Tooltip;
+
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget)) URemoveItemCountWidget* RemoveItemCountWidget;
 
 protected:
     UPROPERTY(meta = (BindWidget))

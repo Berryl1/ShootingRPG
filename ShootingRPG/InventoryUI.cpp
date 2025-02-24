@@ -66,7 +66,7 @@ void UInventoryUI::SetItemToGrid(UTexture2D* ItemIcon, int32 Index)
         {
             // Get Button Style
             FButtonStyle& ButtonStyle = ItemButton->WidgetStyle;
-            FLinearColor YellowTint = FLinearColor(1.0f, 1.0f, 0.0f, 1.0f); // RGBA (노란색)
+            FLinearColor YellowTint = FLinearColor(1.0f, 1.0f, 0.0f, 1.0f); // Yellow Tint
 
             // Set New Image
             FSlateBrush Brush;
@@ -110,17 +110,14 @@ void UInventoryUI::UpdateItemCounts(const TArray<FItemData>& SortedInventory)
         return;
     }
 
-    ItemCountTexts.SetNum(SortedInventory.Num());
-    UE_LOG(LogTemp, Warning, TEXT("SortedInventory.Num() : %d"), SortedInventory.Num());
-
-    for (int32 i = 0; i < SortedInventory.Num(); i++)
+    for (int32 i = 0; i < SortedInventory.Num() && i < ItemButtons.Num(); i++) // 버튼 개수 내에서만 업데이트
     {
         const FItemData& ItemData = SortedInventory[i];
 
         int32* QuantityPtr = RPGCharacter->ItemQuantities.Find(ItemData.ItemName);
         int32 Quantity = QuantityPtr ? *QuantityPtr : 0;
-        
-        VisibleItemCount(i);
+
+        UpdateItemCount(i, Quantity);
     }
 }
 
@@ -253,44 +250,117 @@ void UInventoryUI::OnItemUnhovered()
 
 void UInventoryUI::OnItemClicked()
 {
-    UButton* ClickedButton = nullptr;
-
-    // 클릭된 버튼 찾기
+    UButton* HoveredButton = nullptr;
     for (UButton* Button : ItemButtons)
     {
-        if (Button && Button->IsPressed())  // 현재 눌려있는 버튼 찾기
+        if (Button && Button->IsHovered())  // Find the button that is currently hovered
         {
-            ClickedButton = Button;
+            HoveredButton = Button;
             break;
         }
     }
 
-    if (!ClickedButton)
+    if (HoveredButton)
     {
-        UE_LOG(LogTemp, Warning, TEXT("No button is currently pressed."));
-        return;
+        // Get the index of the item
+        int32 Index = ItemButtons.IndexOfByKey(HoveredButton);
+        if (Index != INDEX_NONE)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Clicked item at index %d"), Index);
+
+            if (CurrentlySelectedButton && CurrentlySelectedButton != HoveredButton)
+			{
+				FButtonStyle OldStyle = CurrentlySelectedButton->WidgetStyle;
+                OldStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+				CurrentlySelectedButton->SetStyle(OldStyle);
+				CurrentlySelectedButton = nullptr;
+			}
+            
+            // Set the style of the button
+            FButtonStyle NewStyle = HoveredButton->WidgetStyle;
+
+            if(CurrentlySelectedButton == HoveredButton)
+			{
+				NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+                CurrentlySelectedButton = nullptr;
+			}
+			else
+			{
+				NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 0.0f, 1.0f));
+                CurrentlySelectedButton = HoveredButton;
+			}
+
+            AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
+            if (RPGCharacter)
+            {
+                EItemType ItemType = RPGCharacter->Inventory[Index].ItemType;
+                FName ItemName = RPGCharacter->Inventory[Index].ItemName;
+                if (ItemType == EItemType::Consumable)
+				{
+                    // Show the remove item count widget
+					if (RemoveItemCountWidget)
+					{
+						RemoveItemCountWidget->SetVisibility(ESlateVisibility::Visible);
+						RemoveItemCountWidget->SetMaxCount(RPGCharacter->ItemQuantities[ItemName]);
+					}
+				}
+			}
+
+			HoveredButton->SetStyle(NewStyle);
+        }
     }
-
-    // 클릭된 버튼의 인덱스 찾기
-    int32 Index = ItemButtons.IndexOfByKey(ClickedButton);
-    if (Index == INDEX_NONE)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Clicked button not found in ItemButtons array!"));
-        return;
-    }
-
-    UE_LOG(LogTemp, Warning, TEXT("Item %d clicked!"), Index);
-
-    // 버튼 스타일 변경 (노란색)
-    FButtonStyle NewStyle = ClickedButton->WidgetStyle;
-    NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 0.0f, 1.0f));  // 노란색
-    ClickedButton->SetStyle(NewStyle);
 }
 
 void UInventoryUI::RemoveClicked()
 {
-    
+    if (!CurrentlySelectedButton)
+    {
+        return;
+    }
+
+    AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
+    if (!RPGCharacter)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to get RPGCharacter."));
+        return;
+    }
+
+    int32 Index = ItemButtons.IndexOfByKey(CurrentlySelectedButton);
+    if (Index == INDEX_NONE || Index >= RPGCharacter->Inventory.Num())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Invalid inventory index: %d"), Index);
+        return;
+    }
+
+    const FItemData& Item = RPGCharacter->Inventory[Index];
+
+    if (!RemoveItemCountWidget)
+    {
+        return;
+    }
+
+    int32 InputCount = RemoveItemCountWidget->GetCount;
+    if (InputCount <= 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Invalid item count to remove: %d"), InputCount);
+        return;
+    }
+
+    if (Item.ItemType == EItemType::Consumable)
+    {
+        RPGCharacter->RemoveItemFromInventory(Item.ItemName, InputCount);
+        if (RPGCharacter->ItemQuantities[Item.ItemName] == 0)
+        {
+            // remove item quantity map
+            CurrentlySelectedButton->SetIsEnabled(false);
+            UE_LOG(LogTemp, Warning, TEXT("Item removed from inventory."));
+        }
+    }
+
+    CurrentlySelectedButton = nullptr;
+    RemoveItemCountWidget->SetVisibility(ESlateVisibility::Hidden);
 }
+
 
 void UInventoryUI::SortClicked()
 {
@@ -299,10 +369,10 @@ void UInventoryUI::SortClicked()
         AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
         if (RPGCharacter)
         {
-            Sort_Button->SetIsEnabled(false);  // 버튼 비활성화
+            Sort_Button->SetIsEnabled(false);  // Button Disable
             RPGCharacter->SortInventory();
 
-            // 0.5초 후 다시 활성화
+            // Enable the button after 0.5 seconds
             FTimerHandle TimerHandle;
             GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
                 {

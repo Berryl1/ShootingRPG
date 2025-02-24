@@ -273,6 +273,19 @@ void AShootingRPGCharacter::AddItemToInventory(FItemData NewItem)
 	}
 }
 
+void AShootingRPGCharacter::RemoveItemFromInventory(FName ItemName, int32 RemoveQuantity)
+{
+	ItemQuantities[ItemName] -= RemoveQuantity;
+
+	UE_LOG(LogTemp, Warning, TEXT("Item Removed: %s, Quantity: %d"), *ItemName.ToString(), ItemQuantities[ItemName]);
+
+	if (InventoryUIInstance)
+	{
+		InventoryUIInstance->RefreshInventory(Inventory);
+	}
+
+}
+
 
 
 void AShootingRPGCharacter::ToggleInventory()
