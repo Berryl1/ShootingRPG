@@ -16,10 +16,8 @@ class SHOOTINGRPG_API UInventoryUI : public UUserWidget
 {
     GENERATED_BODY()
 
-private:
-    UButton* CurrentlySelectedButton = nullptr;
-
 public:
+    UButton* CurrentlySelectedButton = nullptr;
     
     void NativeConstruct();
 

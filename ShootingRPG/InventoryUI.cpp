@@ -6,12 +6,14 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 
+#define INVENTORY_SIZE 22
+
 void UInventoryUI::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    ItemButtons.SetNum(22);
-    ItemCountTexts.SetNum(22);
+    ItemButtons.SetNum(INVENTORY_SIZE);
+    ItemCountTexts.SetNum(INVENTORY_SIZE);
 
     for (int32 i = 0; i < 22; i++)
     {
@@ -126,14 +128,19 @@ void UInventoryUI::UpdateItemCounts(const TArray<FItemData>& SortedInventory)
 void UInventoryUI::RefreshInventory(const TArray<FItemData>& SortedInventory)
 {
     if (SortedInventory.Num() > ItemButtons.Num())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Inventory size exceeds the number of item buttons!"));
-		return;
-	}
-
-    for (int32 i = 0; i < SortedInventory.Num(); i++)
     {
-        if (ItemButtons[i])
+        UE_LOG(LogTemp, Warning, TEXT("Inventory size exceeds the number of item buttons!"));
+        return;
+    }
+
+    for (int32 i = 0; i < INVENTORY_SIZE; i++)
+    {
+        if (!ItemButtons[i])
+        {
+            return;
+        }
+
+        if (i < SortedInventory.Num())
         {
             UTexture2D* ItemIcon = SortedInventory[i].ItemIcon;
 
@@ -145,6 +152,19 @@ void UInventoryUI::RefreshInventory(const TArray<FItemData>& SortedInventory)
             ItemButtons[i]->WidgetStyle.Hovered = Brush;
             ItemButtons[i]->WidgetStyle.Pressed = Brush;
             ItemButtons[i]->SetIsEnabled(true);
+        }
+
+        else  // Hide the rest of the buttons
+        {
+            ItemButtons[i]->SetIsEnabled(false);
+
+            // Set Empty Brush
+            FSlateBrush EmptyBrush;
+            ItemButtons[i]->WidgetStyle.Normal = EmptyBrush;
+            ItemButtons[i]->WidgetStyle.Hovered = EmptyBrush;
+            ItemButtons[i]->WidgetStyle.Pressed = EmptyBrush;
+
+            ItemCountTexts[i]->SetVisibility(ESlateVisibility::Hidden);
         }
     }
 
@@ -168,12 +188,14 @@ void UInventoryUI::VisibleItemCount(int32 Index)
 {
     if (ItemCountTexts.IsValidIndex(Index))
     {
-        UTextBlock* ItemCountText = ItemCountTexts[Index];
+        return;
+    }
 
-        if (ItemCountText)
-        {
-            ItemCountText->SetVisibility(ESlateVisibility::Visible);
-        }
+    UTextBlock* ItemCountText = ItemCountTexts[Index];
+
+    if (ItemCountText)
+    {
+        ItemCountText->SetVisibility(ESlateVisibility::Visible);
     }
 }
 
@@ -288,6 +310,7 @@ void UInventoryUI::OnItemClicked()
 			{
 				NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 0.0f, 1.0f));
                 CurrentlySelectedButton = HoveredButton;
+                RemoveItemCountWidget->GetCount = 0;
 			}
 
             AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
@@ -295,7 +318,7 @@ void UInventoryUI::OnItemClicked()
             {
                 EItemType ItemType = RPGCharacter->Inventory[Index].ItemType;
                 FName ItemName = RPGCharacter->Inventory[Index].ItemName;
-                if (ItemType == EItemType::Consumable)
+                if (ItemType == EItemType::Consumable && CurrentlySelectedButton)
 				{
                     // Show the remove item count widget
 					if (RemoveItemCountWidget)
@@ -315,6 +338,7 @@ void UInventoryUI::RemoveClicked()
 {
     if (!CurrentlySelectedButton)
     {
+        UE_LOG(LogTemp, Warning, TEXT("No item selected for removal."));
         return;
     }
 
@@ -326,7 +350,7 @@ void UInventoryUI::RemoveClicked()
     }
 
     int32 Index = ItemButtons.IndexOfByKey(CurrentlySelectedButton);
-    if (Index == INDEX_NONE || Index >= RPGCharacter->Inventory.Num())
+    if (!RPGCharacter->Inventory.IsValidIndex(Index))
     {
         UE_LOG(LogTemp, Error, TEXT("Invalid inventory index: %d"), Index);
         return;
@@ -336,6 +360,7 @@ void UInventoryUI::RemoveClicked()
 
     if (!RemoveItemCountWidget)
     {
+        UE_LOG(LogTemp, Error, TEXT("RemoveItemCountWidget is null."));
         return;
     }
 
@@ -346,21 +371,19 @@ void UInventoryUI::RemoveClicked()
         return;
     }
 
-    if (Item.ItemType == EItemType::Consumable)
+    RPGCharacter->RemoveItemFromInventory(Item.ItemName, InputCount);
+
+    // 아이템이 완전히 삭제되었는지 확인 후 버튼 비활성화
+    if (!RPGCharacter->ItemQuantities.Contains(Item.ItemName))
     {
-        RPGCharacter->RemoveItemFromInventory(Item.ItemName, InputCount);
-        if (RPGCharacter->ItemQuantities[Item.ItemName] == 0)
-        {
-            // remove item quantity map
-            CurrentlySelectedButton->SetIsEnabled(false);
-            UE_LOG(LogTemp, Warning, TEXT("Item removed from inventory."));
-        }
+        CurrentlySelectedButton = nullptr;
+        UE_LOG(LogTemp, Warning, TEXT("Item removed from inventory."));
     }
 
-    CurrentlySelectedButton = nullptr;
+
+    // RemoveItemCountWidget 숨기기
     RemoveItemCountWidget->SetVisibility(ESlateVisibility::Hidden);
 }
-
 
 void UInventoryUI::SortClicked()
 {
@@ -371,6 +394,18 @@ void UInventoryUI::SortClicked()
         {
             Sort_Button->SetIsEnabled(false);  // Button Disable
             RPGCharacter->SortInventory();
+
+            // Log the inventory list
+            UE_LOG(LogTemp, Warning, TEXT("===== Inventory List ====="));
+            for (const FItemData& Item : RPGCharacter->Inventory)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Item Name: %s, Type: %d, Quantity: %d"),
+                    *Item.ItemName.ToString(),
+                    static_cast<int32>(Item.ItemType),
+                    RPGCharacter->ItemQuantities.Contains(Item.ItemName) ? RPGCharacter->ItemQuantities[Item.ItemName] : 1);
+            }
+            UE_LOG(LogTemp, Warning, TEXT("========================"));
+
 
             // Enable the button after 0.5 seconds
             FTimerHandle TimerHandle;

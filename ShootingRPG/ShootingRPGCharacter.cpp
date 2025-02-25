@@ -270,21 +270,48 @@ void AShootingRPGCharacter::AddItemToInventory(FItemData NewItem)
 
 		// Update Inventory UI Weight
 		InventoryUIInstance->UpdateInventoryDisplay(NewItem.Weight);
+		InventoryUIInstance->RefreshInventory(Inventory);
 	}
 }
 
 void AShootingRPGCharacter::RemoveItemFromInventory(FName ItemName, int32 RemoveQuantity)
 {
+	if (!ItemQuantities.Contains(ItemName))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Item not found in inventory: %s"), *ItemName.ToString());
+		return;
+	}
+
+	// 개수 차감
 	ItemQuantities[ItemName] -= RemoveQuantity;
 
-	UE_LOG(LogTemp, Warning, TEXT("Item Removed: %s, Quantity: %d"), *ItemName.ToString(), ItemQuantities[ItemName]);
+	// 개수가 0 이하이면 삭제
+	if (ItemQuantities[ItemName] <= 0)
+	{
+		ItemQuantities.Remove(ItemName);
 
+		int32 Index = Inventory.IndexOfByPredicate([&](const FItemData& Item) { return Item.ItemName == ItemName; });
+
+		if (Index != INDEX_NONE && Inventory.IsValidIndex(Index))
+		{
+			Inventory.RemoveAt(Index);
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Item Removed: %s, Remaining Quantity: %d"), *ItemName.ToString(),
+		ItemQuantities.Contains(ItemName) ? ItemQuantities[ItemName] : 0);
+
+	// UI 업데이트 (nullptr 방지)
 	if (InventoryUIInstance)
 	{
-		InventoryUIInstance->RefreshInventory(Inventory);
+		if (Inventory.Num() > 0)
+		{
+			InventoryUIInstance->RefreshInventory(Inventory);
+		}
 	}
 
 }
+
 
 
 
