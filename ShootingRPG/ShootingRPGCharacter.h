@@ -92,11 +92,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TMap<FName, int32> ItemQuantities;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Inventory")
+	TSubclassOf<AItemActor> ItemActorClass;
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void AddItemToInventory(FItemData NewItem);
 	
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RemoveItemFromInventory(FName ItemName, int32 Quantity);
+	void RemoveItemFromInventory(FItemData RemoveItem, int32 Quantity);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	const TArray<FItemData>& GetInventory() const { return Inventory; }
@@ -125,7 +128,8 @@ public:
 
 	void SortInventory();
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemTable")
+	UDataTable* ItemDataTable;
 
 	virtual void Tick(float DeltaTime) override;
 	/** Returns CameraBoom subobject **/

@@ -7,12 +7,6 @@
 
 AItemActor::AItemActor()
 {
-    FString ItemDatapath = TEXT("/Script/Engine.DataTable'/Game/_Item/Data/ItemDataTable.ItemDataTable'");
-    static ConstructorHelpers::FObjectFinder<UDataTable> DataTable(*ItemDatapath);
-    if (DataTable.Succeeded())
-    {
-        ItemDataTable = DataTable.Object;
-    }
 
     PrimaryActorTick.bCanEverTick = true;
 
@@ -25,6 +19,17 @@ AItemActor::AItemActor()
     CollisionComponent->SetupAttachment(RootComponent);
     CollisionComponent->SetSphereRadius(100.0f);
     CollisionComponent->SetCollisionProfileName(TEXT("Trigger"));
+
+    static ConstructorHelpers::FObjectFinder<UDataTable> DataTable(TEXT("/Game/_Item/Data/ItemDataTable.ItemDataTable"));
+    if (DataTable.Succeeded())
+    {
+        ItemDataTable = DataTable.Object;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("ItemDataTable not found!"));
+        ItemDataTable = nullptr;
+    }
 }
 
 void AItemActor::BeginPlay()
@@ -32,7 +37,7 @@ void AItemActor::BeginPlay()
     Super::BeginPlay();
 
     // set item data
-    SetItemData(ItemID, ItemDataTable);
+    SetItemData(ItemID, ItemDataTable, ItemData.Quantity);
 
     // collision event
     CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AItemActor::OnOverlapBegin);
@@ -40,7 +45,6 @@ void AItemActor::BeginPlay()
 
     UE_LOG(LogTemp, Warning, TEXT("BeginPlay - ItemID: %s"), *ItemID.ToString());
     UE_LOG(LogTemp, Warning, TEXT("BeginPlay - DataTable: %s"), ItemDataTable ? TEXT("Valid") : TEXT("Invalid"));
-
 }
 
 void AItemActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -66,7 +70,7 @@ void AItemActor::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
-void AItemActor::SetItemData(FName NewItemID, UDataTable* NewItemDataTable)
+void AItemActor::SetItemData(FName NewItemID, UDataTable* NewItemDataTable, int32 Quantity)
 {
     if (NewItemDataTable)
     {
@@ -78,6 +82,10 @@ void AItemActor::SetItemData(FName NewItemID, UDataTable* NewItemDataTable)
             ItemDataTable = NewItemDataTable;
         }
     }
+
+    MeshComponent->SetStaticMesh(ItemData.ItemMesh);
+    ItemData.Quantity = Quantity;
+    UE_LOG(LogTemp, Warning, TEXT("Item Quantity : %d"), Quantity);
 }
 
 FItemData AItemActor::GetItemData() const

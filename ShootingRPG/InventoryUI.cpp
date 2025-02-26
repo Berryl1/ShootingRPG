@@ -371,7 +371,7 @@ void UInventoryUI::RemoveClicked()
         return;
     }
 
-    RPGCharacter->RemoveItemFromInventory(Item.ItemName, InputCount);
+    RPGCharacter->RemoveItemFromInventory(Item, InputCount);
 
     // 아이템이 완전히 삭제되었는지 확인 후 버튼 비활성화
     if (!RPGCharacter->ItemQuantities.Contains(Item.ItemName))

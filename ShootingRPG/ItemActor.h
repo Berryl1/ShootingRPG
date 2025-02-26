@@ -27,25 +27,22 @@ public:
     virtual void Tick(float DeltaTime) override;
 
     // Set item data
-    void SetItemData(FName ItemID, UDataTable* ItemDataTable);
+    void SetItemData(FName ItemID, UDataTable* ItemDataTable, int32 Quantity);
 
     // Get item data
-    UFUNCTION(BlueprintCallable, Category = "Item")
-    FItemData GetItemData() const;
+    UFUNCTION(BlueprintCallable, Category = "Item") FItemData GetItemData() const;
 
-private:
     // Item data
-    UPROPERTY(EditAnywhere, Category = "Item")
-    FItemData ItemData;
+    UPROPERTY(EditAnywhere, Category = "Item") FItemData ItemData;
 
     // Item data table
-    UPROPERTY(EditAnywhere, Category = "Item")
+    UPROPERTY(EditAnywhere, Category = "Item", meta = (AllowPrivateAccess = "true"))
     UDataTable* ItemDataTable;
 
     // Item ID
-    UPROPERTY(EditAnywhere, Category = "Item")
-    FName ItemID;
+    UPROPERTY(EditAnywhere, Category = "Item") FName ItemID;
 
+private:
     // Mesh component
     UPROPERTY(VisibleAnywhere, Category = "Components")
     class UStaticMeshComponent* MeshComponent;

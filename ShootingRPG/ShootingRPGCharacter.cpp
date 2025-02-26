@@ -23,7 +23,7 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AShootingRPGCharacter::AShootingRPGCharacter()
 {
-	
+
 	// Create Stat Component
 	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
 
@@ -274,18 +274,28 @@ void AShootingRPGCharacter::AddItemToInventory(FItemData NewItem)
 	}
 }
 
-void AShootingRPGCharacter::RemoveItemFromInventory(FName ItemName, int32 RemoveQuantity)
+void AShootingRPGCharacter::RemoveItemFromInventory(FItemData RemoveItem, int32 RemoveQuantity)
 {
+	// Check InventoryUIInstance
+	if (!InventoryUIInstance)
+	{
+		return;
+	}
+
+	FName ItemName = RemoveItem.ItemName;
 	if (!ItemQuantities.Contains(ItemName))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Item not found in inventory: %s"), *ItemName.ToString());
 		return;
 	}
 
-	// 개수 차감
+	// Decrease Item Quantity
 	ItemQuantities[ItemName] -= RemoveQuantity;
 
-	// 개수가 0 이하이면 삭제
+	// update UI Weight
+	InventoryUIInstance->UpdateInventoryDisplay(-RemoveItem.Weight * RemoveQuantity);
+	
+	// Remove Item
 	if (ItemQuantities[ItemName] <= 0)
 	{
 		ItemQuantities.Remove(ItemName);
@@ -300,14 +310,32 @@ void AShootingRPGCharacter::RemoveItemFromInventory(FName ItemName, int32 Remove
 
 	UE_LOG(LogTemp, Warning, TEXT("Item Removed: %s, Remaining Quantity: %d"), *ItemName.ToString(),
 		ItemQuantities.Contains(ItemName) ? ItemQuantities[ItemName] : 0);
-
-	// UI 업데이트 (nullptr 방지)
-	if (InventoryUIInstance)
+	if (Inventory.Num() >= 0)
 	{
-		if (Inventory.Num() > 0)
+		InventoryUIInstance->RefreshInventory(Inventory);
+	}
+
+	// Item Actor Spawn
+	if (ItemActorClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ItemActorClass is valid"));
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 100.0f;
+		FRotator SpawnRotation = GetActorRotation();
+
+		AItemActor* ItemActor = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLocation, SpawnRotation, SpawnParams);
+		if (ItemActor)
 		{
-			InventoryUIInstance->RefreshInventory(Inventory);
+			ItemActor->SetItemData(FName("third"), ItemDataTable, RemoveQuantity);
+			UE_LOG(LogTemp, Warning, TEXT("ItemActor Spawned: %s"), *RemoveItem.ItemName.ToString());
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ItemActorClass is invalid"));
 	}
 
 }
