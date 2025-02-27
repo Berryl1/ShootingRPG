@@ -16,6 +16,9 @@ public:
 	// 생성자
 	URemoveItemCountWidget(const FObjectInitializer& ObjectInitializer);
 
+	UFUNCTION()
+	void OnCountTextChanged(const FText& Text);
+
 	UFUNCTION(BlueprintCallable, Category = "Count")
 	void SetMaxCount(int32 MaxCount);
 
@@ -28,9 +31,6 @@ protected:
 
 private:
 	// 입력을 숫자로 제한하는 함수
-	UFUNCTION()
-	void OnCountTextChanged(const FText& Text);
-
 	UFUNCTION()
 	void OnCheckButtonClicked();
 

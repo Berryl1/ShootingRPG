@@ -173,20 +173,22 @@ void UInventoryUI::RefreshInventory(const TArray<FItemData>& SortedInventory)
 
 void UInventoryUI::HideItemCount(int32 Index)
 {
-    if (ItemCountTexts.IsValidIndex(Index))
-    {
-        UTextBlock* ItemCountText = ItemCountTexts[Index];
+    if(!ItemCountTexts.IsValidIndex(Index))
+	{
+		return;
+	}
 
-        if (ItemCountText)
-        {
-            ItemCountText->SetVisibility(ESlateVisibility::Hidden);
-        }
+    UTextBlock* ItemCountText = ItemCountTexts[Index];
+
+    if (ItemCountText)
+    {
+        ItemCountText->SetVisibility(ESlateVisibility::Hidden);
     }
 }
 
 void UInventoryUI::VisibleItemCount(int32 Index)
 {
-    if (ItemCountTexts.IsValidIndex(Index))
+    if (!ItemCountTexts.IsValidIndex(Index))
     {
         return;
     }
@@ -212,52 +214,58 @@ void UInventoryUI::UpdateTooltipText(FName ItemName)
 {
     if (Tooltip)
     {
-        Tooltip->SetTooltipName(ItemName);
+        return;
     }
+
+    Tooltip->SetTooltipName(ItemName);
 }
 
 
 void UInventoryUI::OnItemHovered()
 {
-    if (Tooltip)
+    if (!Tooltip)
+	{
+		return;
+	}
+
+    // 현재 마우스가 올라간 버튼 찾기
+    UButton* HoveredButton = nullptr;
+    for (UButton* Button : ItemButtons)
     {
-        // 현재 마우스가 올라간 버튼 찾기
-        UButton* HoveredButton = nullptr;
-        for (UButton* Button : ItemButtons)
+        if (Button && Button->IsHovered())  // 현재 호버 중인 버튼 찾기
         {
-            if (Button && Button->IsHovered())  // 현재 호버 중인 버튼 찾기
-            {
-                HoveredButton = Button;
-                break;
-            }
+            HoveredButton = Button;
+            break;
         }
-
-        if (HoveredButton)
-        {
-            int32 Index = ItemButtons.IndexOfByKey(HoveredButton);
-            if (Index != INDEX_NONE)
-            {
-                // 플레이어 캐릭터 가져오기
-                AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
-                if (RPGCharacter && RPGCharacter->Inventory.IsValidIndex(Index))
-                {
-                    // 인벤토리에서 해당 인덱스의 아이템 이름 가져오기
-                    FName ItemName = RPGCharacter ->Inventory[Index].ItemName;
-                    UpdateTooltipText(ItemName);
-                }
-            }
-        }
-
-        float MouseX, MouseY;
-        if (GetOwningPlayer()->GetMousePosition(MouseX, MouseY))
-        {
-
-            FVector2D TooltipPosition(MouseX - 150.0f, MouseY - 350.0f);
-            Tooltip->SetRenderTranslation(TooltipPosition);
-        }
-
-        Tooltip->SetVisibility(ESlateVisibility::Visible);
     }
+
+    if (!HoveredButton)
+    {
+        return;
+    }
+
+    int32 Index = ItemButtons.IndexOfByKey(HoveredButton);
+    if (Index != INDEX_NONE)
+    {
+        // 플레이어 캐릭터 가져오기
+        AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
+        if (RPGCharacter && RPGCharacter->Inventory.IsValidIndex(Index))
+        {
+            // 인벤토리에서 해당 인덱스의 아이템 이름 가져오기
+            FName ItemName = RPGCharacter ->Inventory[Index].ItemName;
+            UpdateTooltipText(ItemName);
+        }
+    }
+
+    float MouseX, MouseY;
+    if (GetOwningPlayer()->GetMousePosition(MouseX, MouseY))
+    {
+
+        FVector2D TooltipPosition(MouseX - 150.0f, MouseY - 350.0f);
+        Tooltip->SetRenderTranslation(TooltipPosition);
+    }
+
+    Tooltip->SetVisibility(ESlateVisibility::Visible);
 }
 
 
@@ -265,8 +273,10 @@ void UInventoryUI::OnItemUnhovered()
 {
     if (Tooltip)
     {
-        Tooltip->SetVisibility(ESlateVisibility::Hidden);
+        return;
     }
+
+    Tooltip->SetVisibility(ESlateVisibility::Hidden);
 }
 
 
@@ -282,56 +292,69 @@ void UInventoryUI::OnItemClicked()
         }
     }
 
-    if (HoveredButton)
-    {
-        // Get the index of the item
-        int32 Index = ItemButtons.IndexOfByKey(HoveredButton);
-        if (Index != INDEX_NONE)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Clicked item at index %d"), Index);
+    if (!HoveredButton)
+	{
+		return;
+	}
 
-            if (CurrentlySelectedButton && CurrentlySelectedButton != HoveredButton)
-			{
-				FButtonStyle OldStyle = CurrentlySelectedButton->WidgetStyle;
-                OldStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
-				CurrentlySelectedButton->SetStyle(OldStyle);
-				CurrentlySelectedButton = nullptr;
-			}
+    // Get the index of the item
+    int32 Index = ItemButtons.IndexOfByKey(HoveredButton);
+
+    if (Index == INDEX_NONE)
+	{
+		return;
+	}
+
+    UE_LOG(LogTemp, Warning, TEXT("Clicked item at index %d"), Index);
+
+    if (CurrentlySelectedButton && CurrentlySelectedButton != HoveredButton)
+	{
+		FButtonStyle OldStyle = CurrentlySelectedButton->WidgetStyle;
+        OldStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+		CurrentlySelectedButton->SetStyle(OldStyle);
+		CurrentlySelectedButton = nullptr;
+	}
             
-            // Set the style of the button
-            FButtonStyle NewStyle = HoveredButton->WidgetStyle;
+    // Set the style of the button
+    FButtonStyle NewStyle = HoveredButton->WidgetStyle;
 
-            if(CurrentlySelectedButton == HoveredButton)
-			{
-				NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
-                CurrentlySelectedButton = nullptr;
-			}
-			else
-			{
-				NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 0.0f, 1.0f));
-                CurrentlySelectedButton = HoveredButton;
-                RemoveItemCountWidget->GetCount = 0;
-			}
+    if(CurrentlySelectedButton == HoveredButton)
+	{
+		NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+        CurrentlySelectedButton = nullptr;
+	}
 
-            AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
-            if (RPGCharacter)
-            {
-                EItemType ItemType = RPGCharacter->Inventory[Index].ItemType;
-                FName ItemName = RPGCharacter->Inventory[Index].ItemName;
-                if (ItemType == EItemType::Consumable && CurrentlySelectedButton)
-				{
-                    // Show the remove item count widget
-					if (RemoveItemCountWidget)
-					{
-						RemoveItemCountWidget->SetVisibility(ESlateVisibility::Visible);
-						RemoveItemCountWidget->SetMaxCount(RPGCharacter->ItemQuantities[ItemName]);
-					}
-				}
-			}
+	else
+	{
+		NewStyle.Normal.TintColor = FSlateColor(FLinearColor(1.0f, 1.0f, 0.0f, 1.0f));
+        CurrentlySelectedButton = HoveredButton;
+        RemoveItemCountWidget->GetCount = 0;
+	}
 
-			HoveredButton->SetStyle(NewStyle);
-        }
+    AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
+    
+    if (!RPGCharacter)
+    {
+        return;
     }
+    
+    EItemType ItemType = RPGCharacter->Inventory[Index].ItemType;
+    FName ItemName = RPGCharacter->Inventory[Index].ItemName;
+
+    if (!RemoveItemCountWidget)
+	{
+		return;
+	}
+
+    if (ItemType == EItemType::Consumable && CurrentlySelectedButton)
+	{
+        RemoveItemCountWidget->GetCount = 0;
+        RemoveItemCountWidget->OnCountTextChanged(FText::FromString("0"));
+		RemoveItemCountWidget->SetVisibility(ESlateVisibility::Visible);
+		RemoveItemCountWidget->SetMaxCount(RPGCharacter->ItemQuantities[ItemName]);
+	}
+
+	HoveredButton->SetStyle(NewStyle);
 }
 
 void UInventoryUI::RemoveClicked()
@@ -387,35 +410,41 @@ void UInventoryUI::RemoveClicked()
 
 void UInventoryUI::SortClicked()
 {
-    if (Sort_Button)
+    if(!Sort_Button)
+	{
+		return;
+	}
+
+    AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
+    
+    if (!RPGCharacter)
+	{
+		return;
+	}
+
+    Sort_Button->SetIsEnabled(false);  // Button Disable
+    RPGCharacter->SortInventory();
+
+    // Log the inventory list
+    UE_LOG(LogTemp, Warning, TEXT("===== Inventory List ====="));
+    for (const FItemData& Item : RPGCharacter->Inventory)
     {
-        AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
-        if (RPGCharacter)
-        {
-            Sort_Button->SetIsEnabled(false);  // Button Disable
-            RPGCharacter->SortInventory();
-
-            // Log the inventory list
-            UE_LOG(LogTemp, Warning, TEXT("===== Inventory List ====="));
-            for (const FItemData& Item : RPGCharacter->Inventory)
-            {
-                UE_LOG(LogTemp, Warning, TEXT("Item Name: %s, Type: %d, Quantity: %d"),
-                    *Item.ItemName.ToString(),
-                    static_cast<int32>(Item.ItemType),
-                    RPGCharacter->ItemQuantities.Contains(Item.ItemName) ? RPGCharacter->ItemQuantities[Item.ItemName] : 1);
-            }
-            UE_LOG(LogTemp, Warning, TEXT("========================"));
-
-
-            // Enable the button after 0.5 seconds
-            FTimerHandle TimerHandle;
-            GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
-                {
-                    if (Sort_Button)
-                    {
-                        Sort_Button->SetIsEnabled(true);
-                    }
-                }, 0.5f, false);
-        }
+        UE_LOG(LogTemp, Warning, TEXT("Item Name: %s, Type: %d, Quantity: %d"),
+            *Item.ItemName.ToString(),
+            static_cast<int32>(Item.ItemType),
+            RPGCharacter->ItemQuantities.Contains(Item.ItemName) ? RPGCharacter->ItemQuantities[Item.ItemName] : 1);
     }
+    UE_LOG(LogTemp, Warning, TEXT("========================"));
+
+
+    // Enable the button after 0.5 seconds
+    FTimerHandle TimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
+        {
+            if (Sort_Button)
+            {
+                Sort_Button->SetIsEnabled(true);
+            }
+        }, 0.5f, false);
+
 }

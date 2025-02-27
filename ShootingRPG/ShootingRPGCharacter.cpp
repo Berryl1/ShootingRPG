@@ -69,27 +69,32 @@ AShootingRPGCharacter::AShootingRPGCharacter()
 void AShootingRPGCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (InventoryUIClass)
+	
+	if (!InventoryUIClass)
 	{
-		InventoryUIInstance = CreateWidget<UInventoryUI>(GetWorld(), InventoryUIClass);
-		if (InventoryUIInstance)
-		{
-			InventoryUIInstance->AddToViewport();
-			InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
-		}
+		return;
 	}
 
-	if (StatWidgetClass)
+	InventoryUIInstance = CreateWidget<UInventoryUI>(GetWorld(), InventoryUIClass);
+	if (InventoryUIInstance)
 	{
-		StatWidgetInstance = CreateWidget<UStatWidget>(GetWorld(), StatWidgetClass);
-		if (StatWidgetInstance)
-		{
-			StatWidgetInstance->AddToViewport();
-			StatWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
-		}
+		InventoryUIInstance->AddToViewport();
+		InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	if (!StatWidgetClass)
+	{
+		return;
+	}
+
+	StatWidgetInstance = CreateWidget<UStatWidget>(GetWorld(), StatWidgetClass);
+	if (StatWidgetInstance)
+	{
+		StatWidgetInstance->AddToViewport();
+		StatWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
+
 
 
 
@@ -137,10 +142,6 @@ void AShootingRPGCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 	}
 	
 }
-
-
-
-
 
 void AShootingRPGCharacter::Move(const FInputActionValue& Value)
 {
@@ -196,13 +197,9 @@ void AShootingRPGCharacter::PickUpItem()
 		OverlappingItem->Destroy();
 		OverlappingItem = nullptr;
 	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Null"));
-		UE_LOG(LogTemp, Warning, TEXT("Z 버튼 눌림 - PickUpItem 실행"));
-	}
 }
 
+// sort Inventory
 void AShootingRPGCharacter::SortInventory()
 {
 	// Sort Inventory by Item Type
@@ -232,46 +229,48 @@ void AShootingRPGCharacter::SortInventory()
 
 void AShootingRPGCharacter::AddItemToInventory(FItemData NewItem)
 {
-	if (InventoryUIInstance)
+	if (!InventoryUIInstance)
 	{
-		FName ItemName = NewItem.ItemName;
-		int32 Index = -1;
+		return;
+	}
 
-		if (NewItem.ItemType == EItemType::Consumable || NewItem.ItemType == EItemType::QuestItem)
+	FName ItemName = NewItem.ItemName;
+	int32 Index = -1;
+
+	if (NewItem.ItemType == EItemType::Consumable || NewItem.ItemType == EItemType::QuestItem)
+	{
+		for (int32 i = 0; i < Inventory.Num(); i++)
 		{
-			for (int32 i = 0; i < Inventory.Num(); i++)
+			if (Inventory[i].ItemName == ItemName)
 			{
-				if (Inventory[i].ItemName == ItemName)
-				{
-					Index = i;
-					break;
-				}
-			}
-
-			if (Index == -1)
-			{
-				Index = Inventory.Num();
-				Inventory.Add(NewItem);  // Add New Item
-				ItemQuantities.Add(ItemName, 1);  // Set Item Count
-				InventoryUIInstance->SetItemToGrid(NewItem.ItemIcon, Index); // Update UI
-			}
-			else
-			{
-				ItemQuantities[ItemName]++;
-				InventoryUIInstance->UpdateItemCount(Index, ItemQuantities[ItemName]); // set count
+				Index = i;
+				break;
 			}
 		}
-		// if New Item, Add Invntory
+
+		if (Index == -1)
+		{
+			Index = Inventory.Num();
+			Inventory.Add(NewItem);  // Add New Item
+			ItemQuantities.Add(ItemName, NewItem.Quantity);  // Set Item Count
+			InventoryUIInstance->SetItemToGrid(NewItem.ItemIcon, Index); // Update UI
+		}
 		else
 		{
-			InventoryUIInstance->SetItemToGrid(NewItem.ItemIcon, Inventory.Num());
-			Inventory.Add(NewItem);
+			ItemQuantities[ItemName] += NewItem.Quantity; // Increase Item Count
+			InventoryUIInstance->UpdateItemCount(Index, ItemQuantities[ItemName]); // set count
 		}
-
-		// Update Inventory UI Weight
-		InventoryUIInstance->UpdateInventoryDisplay(NewItem.Weight);
-		InventoryUIInstance->RefreshInventory(Inventory);
 	}
+	// if New Item, Add Invntory
+	else
+	{
+		InventoryUIInstance->SetItemToGrid(NewItem.ItemIcon, Inventory.Num());
+		Inventory.Add(NewItem);
+	}
+
+	// Update Inventory UI Weight
+	InventoryUIInstance->UpdateInventoryDisplay(NewItem.Weight * NewItem.Quantity);
+	InventoryUIInstance->RefreshInventory(Inventory);
 }
 
 void AShootingRPGCharacter::RemoveItemFromInventory(FItemData RemoveItem, int32 RemoveQuantity)
@@ -329,7 +328,9 @@ void AShootingRPGCharacter::RemoveItemFromInventory(FItemData RemoveItem, int32 
 		AItemActor* ItemActor = GetWorld()->SpawnActor<AItemActor>(ItemActorClass, SpawnLocation, SpawnRotation, SpawnParams);
 		if (ItemActor)
 		{
-			ItemActor->SetItemData(FName("third"), ItemDataTable, RemoveQuantity);
+			// find RemoveItem Row ID
+
+			ItemActor->SetItemData(RemoveItem.ItemName, ItemDataTable, RemoveQuantity);
 			UE_LOG(LogTemp, Warning, TEXT("ItemActor Spawned: %s"), *RemoveItem.ItemName.ToString());
 		}
 	}
@@ -339,9 +340,6 @@ void AShootingRPGCharacter::RemoveItemFromInventory(FItemData RemoveItem, int32 
 	}
 
 }
-
-
-
 
 void AShootingRPGCharacter::ToggleInventory()
 {
@@ -373,10 +371,10 @@ void AShootingRPGCharacter::DebugFunction()
 
 	if (StatWidgetInstance->IsVisible())
 	{
-		// 위젯 숨김 + 마우스 커서 숨김
+		// Hide Widget + Hide Mouse Cursor
 		StatWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 		PlayerController->bShowMouseCursor = false;
-		PlayerController->SetInputMode(FInputModeGameOnly());  // 게임 모드로 변경
+		PlayerController->SetInputMode(FInputModeGameOnly());  // Change Gamemode
 	}
 	else
 	{
@@ -385,7 +383,7 @@ void AShootingRPGCharacter::DebugFunction()
 			InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
 		}
 
-		// 위젯 표시 + 마우스 커서 보이게 설정
+		// Visible Widget + Show Mouse Cursor
 		StatWidgetInstance->SetVisibility(ESlateVisibility::Visible);
 		PlayerController->bShowMouseCursor = true;
 	}

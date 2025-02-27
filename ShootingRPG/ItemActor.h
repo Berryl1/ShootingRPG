@@ -42,6 +42,9 @@ public:
     // Item ID
     UPROPERTY(EditAnywhere, Category = "Item") FName ItemID;
 
+    // Item quantity
+    // UPROPERTY(EditAnywhere, Category = "Item") int32 Quantity;
+
 private:
     // Mesh component
     UPROPERTY(VisibleAnywhere, Category = "Components")

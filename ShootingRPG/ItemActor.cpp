@@ -30,6 +30,10 @@ AItemActor::AItemActor()
         UE_LOG(LogTemp, Error, TEXT("ItemDataTable not found!"));
         ItemDataTable = nullptr;
     }
+
+    // set Item Mesh
+    MeshComponent->SetStaticMesh(ItemData.ItemMesh);
+
 }
 
 void AItemActor::BeginPlay()
@@ -72,15 +76,17 @@ void AItemActor::Tick(float DeltaTime)
 
 void AItemActor::SetItemData(FName NewItemID, UDataTable* NewItemDataTable, int32 Quantity)
 {
-    if (NewItemDataTable)
+    if (!NewItemDataTable)
     {
-        FItemData* Data = NewItemDataTable->FindRow<FItemData>(NewItemID, TEXT(""));
-        if (Data)
-        {
-            ItemData = *Data;
-            ItemID = NewItemID;
-            ItemDataTable = NewItemDataTable;
-        }
+        return;
+    }
+    
+    FItemData* Data = NewItemDataTable->FindRow<FItemData>(NewItemID, TEXT(""));
+    if (Data)
+    {
+        ItemData = *Data;
+        ItemID = NewItemID;
+        ItemDataTable = NewItemDataTable;
     }
 
     MeshComponent->SetStaticMesh(ItemData.ItemMesh);
