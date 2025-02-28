@@ -15,6 +15,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class UInventoryUI;
+class UInGame;
 class UStatComponent;
 struct FInputActionValue;
 
@@ -116,11 +117,17 @@ public:
 	UPROPERTY()
 	UStatWidget* StatWidgetInstance;
 
+	UPROPERTY()
+	UInGame* InGameUIInstance;
+
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void ToggleInventory();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats")
 	UStatComponent* StatComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	FItemData WeaponItem;
 
 	void SetOverlappingItem(AItemActor* NewItem);
 

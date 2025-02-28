@@ -362,6 +362,7 @@ void AShootingRPGCharacter::ToggleInventory()
 		InventoryUIInstance->SetVisibility(ESlateVisibility::Visible);
 		PlayerController->bShowMouseCursor = true;
 	}
+
 }
 
 void AShootingRPGCharacter::DebugFunction()

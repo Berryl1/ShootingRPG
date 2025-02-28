@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "ToolTipWidget.h"
+#include "InGame.h"
 #include "RemoveItemCountWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "InventoryUI.generated.h"
@@ -26,6 +27,8 @@ public:
     UPROPERTY(meta = (BindWidget)) TArray<UTextBlock*> ItemCountTexts;
 
     UPROPERTY(meta = (BindWidget)) UButton* RemoveItem_Bt;
+
+    UPROPERTY(meta = (BindWidget)) UButton* Equip_Button;
 
     UPROPERTY(meta = (BindWidget)) UButton* Sort_Button;
 
@@ -61,6 +64,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "inventory")
     void RemoveClicked();
+
+    UFUNCTION(BlueprintCallable, Category = "Inventory")
+    void EquipClicked();
 
     UFUNCTION(BlueprintCallable, Category = "inventory")
     void SortClicked();

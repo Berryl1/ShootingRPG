@@ -43,11 +43,20 @@ void UInventoryUI::NativeConstruct()
         }
     }
 
-    if (RemoveItem_Bt) {RemoveItem_Bt->
-        OnClicked.AddDynamic(this, &UInventoryUI::RemoveClicked); }
+    if (RemoveItem_Bt)
+    {
+        RemoveItem_Bt->OnClicked.AddDynamic(this, &UInventoryUI::RemoveClicked);
+    }
 
-    if (Sort_Button) {Sort_Button->
-		OnClicked.AddDynamic(this, &UInventoryUI::SortClicked); }
+    if (Equip_Button)
+    {
+        Equip_Button->OnClicked.AddDynamic(this, &UInventoryUI::EquipClicked);
+    }
+
+    if (Sort_Button)
+    {
+        Sort_Button->OnClicked.AddDynamic(this, &UInventoryUI::SortClicked);
+    }
 
     SetVisibility(ESlateVisibility::Hidden);
 
@@ -171,6 +180,7 @@ void UInventoryUI::RefreshInventory(const TArray<FItemData>& SortedInventory)
     UpdateItemCounts(SortedInventory);
 }
 
+
 void UInventoryUI::HideItemCount(int32 Index)
 {
     if(!ItemCountTexts.IsValidIndex(Index))
@@ -212,7 +222,7 @@ void UInventoryUI::UpdateInventoryDisplay(int32 AddWeight)
 
 void UInventoryUI::UpdateTooltipText(FName ItemName)
 {
-    if (Tooltip)
+    if (!Tooltip)
     {
         return;
     }
@@ -224,9 +234,9 @@ void UInventoryUI::UpdateTooltipText(FName ItemName)
 void UInventoryUI::OnItemHovered()
 {
     if (!Tooltip)
-	{
-		return;
-	}
+    {
+        return;
+    }
 
     // 현재 마우스가 올라간 버튼 찾기
     UButton* HoveredButton = nullptr;
@@ -239,21 +249,18 @@ void UInventoryUI::OnItemHovered()
         }
     }
 
-    if (!HoveredButton)
-    {
-        return;
-    }
-
     int32 Index = ItemButtons.IndexOfByKey(HoveredButton);
     if (Index != INDEX_NONE)
     {
         // 플레이어 캐릭터 가져오기
         AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
+
         if (RPGCharacter && RPGCharacter->Inventory.IsValidIndex(Index))
         {
             // 인벤토리에서 해당 인덱스의 아이템 이름 가져오기
-            FName ItemName = RPGCharacter ->Inventory[Index].ItemName;
+            FName ItemName = RPGCharacter->Inventory[Index].ItemName;
             UpdateTooltipText(ItemName);
+            UE_LOG(LogTemp, Warning, TEXT("Item Name: %s"), *ItemName.ToString())
         }
     }
 
@@ -271,12 +278,13 @@ void UInventoryUI::OnItemHovered()
 
 void UInventoryUI::OnItemUnhovered()
 {
-    if (Tooltip)
+    if (!Tooltip)
     {
         return;
     }
 
     Tooltip->SetVisibility(ESlateVisibility::Hidden);
+    
 }
 
 
@@ -406,6 +414,42 @@ void UInventoryUI::RemoveClicked()
 
     // RemoveItemCountWidget 숨기기
     RemoveItemCountWidget->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void UInventoryUI::EquipClicked()
+{
+
+    if (!Equip_Button)
+    {
+        return;
+    }
+
+    if (!CurrentlySelectedButton)
+    {
+        return;
+    }
+    AShootingRPGCharacter* RPGCharacter = Cast<AShootingRPGCharacter>(GetOwningPlayerPawn());
+
+    if (!RPGCharacter)
+    {
+        return;
+    }
+
+    // Equip Weapons
+    int32 index = ItemButtons.IndexOfByKey(CurrentlySelectedButton);
+    
+    FItemData EquipItem = RPGCharacter->Inventory[index];
+    if (EquipItem.ItemType != EItemType::Weapon)
+    {
+        return;
+    }
+    
+    RPGCharacter->WeaponItem = EquipItem;
+    FItemData CurrentWeaponItem = RPGCharacter->WeaponItem;
+    if (CurrentWeaponItem.ItemName.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Equiped item Name : %s"), *CurrentWeaponItem.ItemName.ToString());
+    }
 }
 
 void UInventoryUI::SortClicked()
