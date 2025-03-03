@@ -15,7 +15,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class UInventoryUI;
-class UInGame;
+class UInGameWidget;
 class UStatComponent;
 struct FInputActionValue;
 
@@ -104,12 +104,18 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	const TArray<FItemData>& GetInventory() const { return Inventory; }
+	
+
+	// UI
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UStatWidget> StatWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UInventoryUI> InventoryUIClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UInGameWidget> InGameWidgetClass;
 
 	UPROPERTY()
 	UInventoryUI* InventoryUIInstance;
@@ -118,16 +124,19 @@ public:
 	UStatWidget* StatWidgetInstance;
 
 	UPROPERTY()
-	UInGame* InGameUIInstance;
+	UInGameWidget* InGameWidgetInstance;
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void ToggleInventory();
-
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats")
 	UStatComponent* StatComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-	FItemData WeaponItem;
+	FItemData EquipedWeaponItem;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetWeaponIcon();
 
 	void SetOverlappingItem(AItemActor* NewItem);
 
@@ -144,6 +153,5 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
-	
 };
 

@@ -14,6 +14,7 @@
 #include "ItemActor.h"
 #include "StatComponent.h"
 #include "InventoryUI.h"
+#include "InGameWidget.h"
 #include "StatWidget.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -75,10 +76,11 @@ void AShootingRPGCharacter::BeginPlay()
 		return;
 	}
 
-	InventoryUIInstance = CreateWidget<UInventoryUI>(GetWorld(), InventoryUIClass);
-	if (InventoryUIInstance)
+	else
 	{
-		InventoryUIInstance->AddToViewport();
+		InventoryUIInstance = CreateWidget<UInventoryUI>(GetWorld(), InventoryUIClass);
+
+		InventoryUIInstance->AddToViewport(1);
 		InventoryUIInstance->SetVisibility(ESlateVisibility::Hidden);
 	}
 
@@ -87,11 +89,27 @@ void AShootingRPGCharacter::BeginPlay()
 		return;
 	}
 
-	StatWidgetInstance = CreateWidget<UStatWidget>(GetWorld(), StatWidgetClass);
-	if (StatWidgetInstance)
+	else
 	{
+		StatWidgetInstance = CreateWidget<UStatWidget>(GetWorld(), StatWidgetClass);
+
 		StatWidgetInstance->AddToViewport();
 		StatWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	if (!InGameWidgetClass)
+	{
+		return;
+		
+	}
+	
+	else
+	{
+		InGameWidgetInstance = CreateWidget<UInGameWidget>(GetWorld(), InGameWidgetClass);
+
+		InGameWidgetInstance->AddToViewport();
+		InGameWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+		UE_LOG(LogTemp, Error, TEXT("Is Created IngameWidget"));
 	}
 }
 
@@ -203,7 +221,7 @@ void AShootingRPGCharacter::PickUpItem()
 void AShootingRPGCharacter::SortInventory()
 {
 	// Sort Inventory by Item Type
-	Inventory.Sort([](const FItemData& A, const FItemData& B)
+	Inventory.Sort([](const FItemData& A, const FItemData& B) // 다시 공부해야할 것
 	{
 		if (A.ItemType == B.ItemType)
 		{
@@ -388,6 +406,17 @@ void AShootingRPGCharacter::DebugFunction()
 		StatWidgetInstance->SetVisibility(ESlateVisibility::Visible);
 		PlayerController->bShowMouseCursor = true;
 	}
+}
+
+void AShootingRPGCharacter::SetWeaponIcon()
+{
+	if (!InGameWidgetInstance)
+	{
+		return;
+	}
+	UTexture2D* ItemIcon = EquipedWeaponItem.ItemIcon;
+
+	InGameWidgetInstance->SetWeaponIcon(ItemIcon);
 }
 
 void AShootingRPGCharacter::SetOverlappingItem(AItemActor* NewItem)

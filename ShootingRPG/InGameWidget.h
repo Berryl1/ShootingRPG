@@ -4,21 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "InGame.generated.h"
+#include "InGameWidget.generated.h"
 
-
-class UImage;
 /**
  * 
  */
+class UImage;
+
 UCLASS()
-class SHOOTINGRPG_API UInGame : public UUserWidget
+class SHOOTINGRPG_API UInGameWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
 
 	UPROPERTY(meta = (BindWidget))
-	UImage* WeaponIcon;
-};
+	UImage* EquipedWeaponIcon;
 
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponIcon(UTexture2D* ItemIcon);
+};

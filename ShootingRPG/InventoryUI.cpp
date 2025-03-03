@@ -444,12 +444,8 @@ void UInventoryUI::EquipClicked()
         return;
     }
     
-    RPGCharacter->WeaponItem = EquipItem;
-    FItemData CurrentWeaponItem = RPGCharacter->WeaponItem;
-    if (CurrentWeaponItem.ItemName.IsValid())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Equiped item Name : %s"), *CurrentWeaponItem.ItemName.ToString());
-    }
+    RPGCharacter->EquipedWeaponItem = EquipItem;
+    RPGCharacter->SetWeaponIcon();
 }
 
 void UInventoryUI::SortClicked()

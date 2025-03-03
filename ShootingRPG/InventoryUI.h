@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "ToolTipWidget.h"
-#include "InGame.h"
 #include "RemoveItemCountWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "InventoryUI.generated.h"
